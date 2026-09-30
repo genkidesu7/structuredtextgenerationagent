@@ -1,0 +1,56 @@
+[project]
+name = "structured-text-generation-agent"
+version = "0.1.0"
+description = "Provider-agnostic structured text generation with schema validation and automatic retry"
+requires-python = ">=3.11"
+dependencies = [
+    "agenticstar-agentcore[openai,marketplace]==1.0.3",
+    "jinja2==3.1.4",
+    "jsonschema==4.23.0",
+    "pyyaml==6.0.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==9.0.3",
+    "pytest-cov==5.0.0",
+    "pytest-asyncio==1.4.0",
+    "ruff==0.4.4",
+    "mypy==1.10.0",
+]
+
+[build-system]
+requires = ["setuptools==68.0.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.pytest.ini_options]
+markers = [
+    "real_llm: calls the real Azure OpenAI deployment (USE_MOCK=false + AZURE_OPENAI_* required)",
+]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+
+# agenticstar-agentcore (framework.*, shared.*) and langgraph ship no py.typed marker, and
+# jsonschema has no installed stubs: treat them as untyped at the SDK boundary only.
+[[tool.mypy.overrides]]
+module = ["framework.*", "shared.*", "langgraph.*", "jsonschema.*"]
+ignore_missing_imports = true
+
+# Subclassing the untyped SDK bases (FunctionNode, AgentBaseGraph, AgentState) is the
+# template contract, so strict's disallow_subclassing_any cannot apply to src.*.
+[[tool.mypy.overrides]]
+module = ["src.*"]
+disallow_subclassing_any = false
+
+[tool.uv]
+# agenticstar-agentcore's published index metadata pins a langchain-core version
+# incompatible with its own "openai" extra; force the SDK-compatible version.
+override-dependencies = [
+    "langchain-core==1.5.4",
+]
